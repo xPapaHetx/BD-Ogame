@@ -1,57 +1,224 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BD OGame - PapaHet</title>
 
     <style>
-        *{
-            box-sizing:border-box;
+        * {
+            box-sizing: border-box;
         }
 
-        body{
-            margin:0;
-            background:#111;
-            font-family:Arial, sans-serif;
-            color:white;
-            display:flex;
-            justify-content:center;
+        body {
+            margin: 0;
+            background: #111;
+            display: flex;
+            justify-content: center;
+            font-family: Arial, sans-serif;
         }
 
-        .conteneur{
-            width:min(1600px,95vw);
-            display:grid;
-            grid-template-columns:repeat(2,1fr);
-            gap:16px;
-            padding:20px;
+        .conteneur {
+            width: min(1600px, 95vw);
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            padding: 20px;
         }
 
-        img{
-            width:100%;
-            display:block;
-            border-radius:6px;
-            cursor:pointer;
+        .case {
+            width: 100%;
+            display: block;
+            cursor: zoom-in;
+        }
+
+        .mise-en-avant {
+            grid-column: 1 / -1;
+            width: 60%;
+            justify-self: center;
+        }
+
+        .lightbox {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.94);
+        }
+
+        .lightbox.ouverte {
+            display: flex;
+        }
+
+        .lightbox-image {
+            max-width: 94vw;
+            max-height: 94vh;
+            display: block;
+            object-fit: contain;
+            cursor: zoom-out;
+        }
+
+        .bouton {
+            position: fixed;
+            z-index: 1001;
+            border: 0;
+            background: rgba(0, 0, 0, 0.55);
+            color: white;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .fermer {
+            top: 14px;
+            right: 18px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            font-size: 32px;
+            line-height: 48px;
+        }
+
+        .precedente,
+        .suivante {
+            top: 50%;
+            width: 56px;
+            height: 80px;
+            transform: translateY(-50%);
+            border-radius: 8px;
+            font-size: 44px;
+        }
+
+        .precedente {
+            left: 16px;
+        }
+
+        .suivante {
+            right: 16px;
+        }
+
+        @media (max-width: 800px) {
+            .conteneur {
+                grid-template-columns: 1fr;
+            }
+
+            .mise-en-avant {
+                width: 100%;
+                grid-column: auto;
+            }
+
+            .precedente,
+            .suivante {
+                width: 44px;
+                height: 64px;
+                font-size: 34px;
+            }
         }
     </style>
 </head>
 
 <body>
 
-<div class="conteneur">
+    <div class="conteneur" id="conteneur"></div>
 
-<script>
-for(let i=1;i<=41;i++){
+    <div class="lightbox" id="lightbox">
+        <button class="bouton fermer" id="fermer" aria-label="Fermer">×</button>
+        <button class="bouton precedente" id="precedente" aria-label="Image précédente">‹</button>
 
-    const img=document.createElement("img");
+        <img class="lightbox-image" id="lightboxImage" alt="Case agrandie">
 
-    img.src="images_uniformes/Case "+String(i).padStart(2,"0")+".png";
+        <button class="bouton suivante" id="suivante" aria-label="Image suivante">›</button>
+    </div>
 
-    document.currentScript.parentElement.appendChild(img);
-}
-</script>
+    <script>
+        const conteneur = document.getElementById("conteneur");
+        const lightbox = document.getElementById("lightbox");
+        const lightboxImage = document.getElementById("lightboxImage");
+        const fermer = document.getElementById("fermer");
+        const precedente = document.getElementById("precedente");
+        const suivante = document.getElementById("suivante");
 
-</div>
+        const images = [];
+        let indexActuel = 0;
+
+        for (let i = 1; i <= 41; i++) {
+            const img = document.createElement("img");
+
+            img.src =
+                "images_uniformes/Case " +
+                String(i).padStart(2, "0") +
+                ".png";
+
+            img.alt = "Case " + String(i).padStart(2, "0");
+            img.classList.add("case");
+
+            if (i === 33 || i === 34 || i === 41) {
+                img.classList.add("mise-en-avant");
+            }
+
+            img.addEventListener("click", () => {
+                ouvrirLightbox(i - 1);
+            });
+
+            images.push(img.src);
+            conteneur.appendChild(img);
+        }
+
+        function ouvrirLightbox(index) {
+            indexActuel = index;
+            lightboxImage.src = images[indexActuel];
+            lightbox.classList.add("ouverte");
+            document.body.style.overflow = "hidden";
+        }
+
+        function fermerLightbox() {
+            lightbox.classList.remove("ouverte");
+            document.body.style.overflow = "";
+        }
+
+        function imagePrecedente() {
+            indexActuel = (indexActuel - 1 + images.length) % images.length;
+            lightboxImage.src = images[indexActuel];
+        }
+
+        function imageSuivante() {
+            indexActuel = (indexActuel + 1) % images.length;
+            lightboxImage.src = images[indexActuel];
+        }
+
+        fermer.addEventListener("click", fermerLightbox);
+        precedente.addEventListener("click", imagePrecedente);
+        suivante.addEventListener("click", imageSuivante);
+        lightboxImage.addEventListener("click", fermerLightbox);
+
+        lightbox.addEventListener("click", event => {
+            if (event.target === lightbox) {
+                fermerLightbox();
+            }
+        });
+
+        document.addEventListener("keydown", event => {
+            if (!lightbox.classList.contains("ouverte")) {
+                return;
+            }
+
+            if (event.key === "Escape") {
+                fermerLightbox();
+            }
+
+            if (event.key === "ArrowLeft") {
+                imagePrecedente();
+            }
+
+            if (event.key === "ArrowRight") {
+                imageSuivante();
+            }
+        });
+    </script>
 
 </body>
+
 </html>
